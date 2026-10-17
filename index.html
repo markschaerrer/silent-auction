@@ -90,7 +90,9 @@ table.res th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-s
 .sheet{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .qrcard{background:#fff;border:1.5px dashed #c9c3b5;border-radius:14px;padding:14px;text-align:center;break-inside:avoid;page-break-inside:avoid}
 .qrcard .qr{display:flex;justify-content:center;margin:10px 0}
-.qrcard .qr img,.qrcard .qr canvas{width:150px!important;height:150px!important}
+.sheet>*{min-width:0}
+.qrcard{padding:10px}
+.qrcard .qr img,.qrcard .qr canvas{width:100%!important;max-width:150px;height:auto!important;aspect-ratio:1}
 .qrcard h3{font-size:17px}
 .overlay{position:fixed;inset:0;background:rgba(20,33,61,.55);z-index:60;display:flex;align-items:flex-end;justify-content:center}
 .sheetpanel{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:20px 16px calc(24px + env(safe-area-inset-bottom))}
