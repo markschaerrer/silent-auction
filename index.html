@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14213d">
+<title>Silent Auction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --navy:#14213d; --navy-2:#1f2f55; --gold:#e0a526; --gold-soft:#fbf1da;
+  --bg:#f6f4ef; --card:#ffffff; --ink:#1b1b1f; --muted:#6b6a72; --line:#e6e2d8;
+  --green:#1f8a4c; --green-soft:#e3f4ea; --red:#c8372d; --red-soft:#fde8e6;
+  --radius:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;padding-bottom:env(safe-area-inset-bottom)}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;margin:0;letter-spacing:-.01em}
+button,input,textarea,select{font:inherit}
+a{color:inherit}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px}
+header.top{background:var(--navy);color:#fff;padding:18px 0 22px;position:sticky;top:0;z-index:20;box-shadow:0 2px 12px rgba(0,0,0,.15)}
+header.top .row{display:flex;align-items:center;gap:12px}
+header.top h1{font-size:22px;line-height:1.15;flex:1}
+header.top .sub{color:#c9d1e6;font-size:13px;margin-top:6px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600}
+.pill.gold{background:var(--gold);color:var(--navy)}
+.pill.light{background:rgba(255,255,255,.12);color:#fff}
+.pill.win{background:var(--green-soft);color:var(--green)}
+.pill.out{background:var(--red-soft);color:var(--red)}
+.pill.none{background:#efece4;color:var(--muted)}
+.back{background:rgba(255,255,255,.12);border:0;color:#fff;width:38px;height:38px;border-radius:12px;font-size:20px;cursor:pointer;flex:none}
+main{padding:18px 0 60px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.stack>*+*{margin-top:12px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:14px 18px;font-weight:600;cursor:pointer;min-height:48px;text-decoration:none}
+.btn.primary{background:var(--navy);color:#fff}
+.btn.gold{background:var(--gold);color:var(--navy)}
+.btn.ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+.btn.danger{background:var(--red-soft);color:var(--red)}
+.btn.block{width:100%}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+label.f{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:#3a3a42}
+input.in,textarea.in,select.in{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;background:#fff;font-size:16px;color:var(--ink)}
+input.in:focus,textarea.in:focus{outline:none;border-color:var(--navy)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tabs{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto}
+.tab{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}
+.tab.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.item{display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;cursor:pointer;text-decoration:none;color:inherit}
+.item+.item{margin-top:10px}
+.thumb{width:72px;height:72px;border-radius:12px;background:var(--gold-soft) center/cover no-repeat;flex:none;display:flex;align-items:center;justify-content:center;font-family:Fraunces,serif;font-size:22px;color:var(--navy)}
+.item .meta{flex:1;min-width:0}
+.item .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .n{font-size:12px;color:var(--muted);font-weight:600}
+.price{font-family:Fraunces,serif;font-weight:700;font-size:20px;color:var(--navy)}
+.hero{width:100%;aspect-ratio:4/3;border-radius:var(--radius);background:var(--gold-soft) center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-family:Fraunces,serif;font-size:56px;color:var(--navy)}
+.bigprice{font-family:Fraunces,serif;font-size:44px;font-weight:700;color:var(--navy);line-height:1}
+.status-box{border-radius:12px;padding:12px 14px;font-weight:600}
+.status-box.win{background:var(--green-soft);color:var(--green)}
+.status-box.out{background:var(--red-soft);color:var(--red)}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.quick button{border:1.5px solid var(--navy);background:#fff;color:var(--navy);border-radius:12px;padding:12px 4px;font-weight:700;cursor:pointer;font-size:16px}
+.quick button.sel{background:var(--navy);color:#fff}
+.hist{list-style:none;padding:0;margin:0}
+.hist li{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.hist li:last-child{border-bottom:0}
+.toast{position:fixed;left:50%;transform:translateX(-50%) translateY(-140%);top:calc(10px + env(safe-area-inset-top));width:min(92vw,560px);z-index:100;border-radius:16px;padding:14px 16px;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:transform .35s cubic-bezier(.2,.9,.3,1.2);display:flex;gap:12px;align-items:center;cursor:pointer}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.out{background:var(--red)}
+.toast.ok{background:var(--green)}
+.toast.info{background:var(--navy-2)}
+.toast .ic{font-size:26px}
+.toast b{display:block}
+.empty{text-align:center;padding:40px 16px;color:var(--muted)}
+.countdown{font-variant-numeric:tabular-nums}
+.closed-banner{background:var(--red-soft);color:var(--red);text-align:center;font-weight:700;padding:10px;border-radius:12px}
+.adm-item{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.adm-item:last-child{border-bottom:0}
+table.res{width:100%;border-collapse:collapse;font-size:14px}
+table.res th,table.res td{text-align:left;padding:10px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+table.res th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.sheet{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.qrcard{background:#fff;border:1.5px dashed #c9c3b5;border-radius:14px;padding:14px;text-align:center;break-inside:avoid;page-break-inside:avoid}
+.qrcard .qr{display:flex;justify-content:center;margin:10px 0}
+.qrcard .qr img,.qrcard .qr canvas{width:150px!important;height:150px!important}
+.qrcard h3{font-size:17px}
+.overlay{position:fixed;inset:0;background:rgba(20,33,61,.55);z-index:60;display:flex;align-items:flex-end;justify-content:center}
+.sheetpanel{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:20px 16px calc(24px + env(safe-area-inset-bottom))}
+.spin{width:22px;height:22px;border:3px solid rgba(0,0,0,.1);border-top-color:var(--navy);border-radius:50%;animation:sp 1s linear infinite;margin:40px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media print{
+  header.top,.noprint,.toast{display:none!important}
+  body,html{background:#fff}
+  main{padding:0}
+  .sheet{gap:10px}
+  .qrcard{border-color:#999}
+}
+</style>
+</head>
+<body>
+<div id="toast" class="toast" role="alert"></div>
+<div id="app"><div class="spin"></div></div>
+
+<script>
+const SUPABASE_URL = "https://nwuajqxjcouodzhdfimj.supabase.co";
+const SUPABASE_KEY = "sb_publishable__o5cCLAdwZLU9YqVZh3Rhg_nsbqucpU";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ---------- helpers ---------- */
+const $ = (s, el=document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money = n => n == null ? "" : "$" + Number(n).toLocaleString("en-US",{minimumFractionDigits: Number(n)%1 ? 2 : 0, maximumFractionDigits:2});
+const store = {
+  get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+  sget(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } },
+  sset(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
+};
+const params = () => new URLSearchParams(location.search);
+const baseUrl = () => location.origin + location.pathname;
+function go(q){ history.pushState({}, "", q ? "?" + q : location.pathname); route(); window.scrollTo(0,0); }
+window.addEventListener("popstate", route);
+function errMsg(e){ return (e && (e.message || e.error_description)) || "Something went wrong"; }
+function minNext(it){ return it.current_bid == null ? Number(it.starting_bid) : Number(it.current_bid) + Number(it.min_increment); }
+function initial(t){ return esc((t||"?").trim().charAt(0).toUpperCase()); }
+function thumbStyle(it){ return it.image_url ? `style="background-image:url('${esc(it.image_url)}')"` : ""; }
+
+let toastTimer;
+function toast(kind, title, body, onClick){
+  const t = $("#toast");
+  const icon = kind === "out" ? "⚠️" : kind === "ok" ? "✅" : "🔔";
+  t.className = "toast " + kind;
+  t.innerHTML = `<div class="ic">${icon}</div><div><b>${esc(title)}</b>${body ? `<span class="small">${esc(body)}</span>` : ""}</div>`;
+  t.onclick = () => { t.classList.remove("show"); onClick && onClick(); };
+  requestAnimationFrame(() => t.classList.add("show"));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), kind === "out" ? 9000 : 3500);
+}
+function beep(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, .18].forEach(d => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(.0001, ctx.currentTime + d);
+      g.gain.exponentialRampToValueAtTime(.3, ctx.currentTime + d + .02);
+      g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime + d + .15);
+      o.start(ctx.currentTime + d); o.stop(ctx.currentTime + d + .16);
+    });
+  }catch(e){}
+}
+
+/* ---------- state ---------- */
+const S = { auction:null, items:[], channel:null, auctionId:null, myMax:{}, timer:null };
+function bidderKey(aid){ return "sa_bidder_" + aid; }
+function me(){ return S.auctionId ? store.get(bidderKey(S.auctionId)) : null; }
+function myStatus(it){
+  const m = me();
+  if (!m || S.myMax[it.id] == null) return null;
+  return it.high_bidder_id === m.bidder_id ? "win" : "out";
+}
+
+async function loadAuction(aid){
+  if (S.auctionId === aid && S.auction) return true;
+  teardown();
+  S.auctionId = aid;
+  const [{data:a, error:e1}, {data:items, error:e2}] = await Promise.all([
+    sb.from("auctions").select("*").eq("id", aid).maybeSingle(),
+    sb.from("items").select("*").eq("auction_id", aid).order("item_number")
+  ]);
+  if (e1 || !a) { S.auction = null; return false; }
+  S.auction = a; S.items = items || [];
+  await loadMyBids();
+  subscribe(aid);
+  return true;
+}
+async function loadMyBids(){
+  const m = me(); S.myMax = {};
+  if (!m) return;
+  const { data } = await sb.rpc("my_bid_items", { p_bidder: m.bidder_id, p_secret: m.secret });
+  (data || []).forEach(r => S.myMax[r.item_id] = Number(r.my_max));
+}
+function teardown(){
+  if (S.channel) { sb.removeChannel(S.channel); S.channel = null; }
+  S.auction = null; S.items = []; S.myMax = {};
+}
+function subscribe(aid){
+  S.channel = sb.channel("auction-" + aid)
+    .on("postgres_changes", { event:"*", schema:"public", table:"items", filter:"auction_id=eq." + aid }, p => onItemChange(p))
+    .on("postgres_changes", { event:"UPDATE", schema:"public", table:"auctions", filter:"id=eq." + aid }, p => { S.auction = p.new; rerenderLive(); })
+    .subscribe();
+}
+function onItemChange(p){
+  if (p.eventType === "DELETE") { S.items = S.items.filter(i => i.id !== p.old.id); rerenderLive(); return; }
+  const nu = p.new;
+  const idx = S.items.findIndex(i => i.id === nu.id);
+  const old = idx >= 0 ? S.items[idx] : null;
+  if (idx >= 0) S.items[idx] = nu; else { S.items.push(nu); S.items.sort((a,b)=>a.item_number-b.item_number); }
+  const m = me();
+  if (m && old && old.high_bidder_id === m.bidder_id && nu.high_bidder_id !== m.bidder_id) {
+    outbidAlert(nu);
+  }
+  rerenderLive(nu.id);
+}
+function outbidAlert(it){
+  beep();
+  if (navigator.vibrate) navigator.vibrate([200,100,200]);
+  toast("out", "You've been outbid!", `#${it.item_number} ${it.title} is now ${money(it.current_bid)}. Tap to bid again.`,
+    () => go(`a=${S.auctionId}&i=${it.id}`));
+  try{
+    if ("Notification" in window && Notification.permission === "granted" && document.visibilityState !== "visible") {
+      new Notification("You've been outbid!", { body: `${it.title} is now ${money(it.current_bid)}`, tag: it.id });
+    }
+  }catch(e){}
+  flashTitle();
+}
+let flashInt;
+function flashTitle(){
+  clearInterval(flashInt); let on = false; const orig = document.title;
+  flashInt = setInterval(() => { document.title = (on = !on) ? "⚠️ Outbid!" : orig; }, 900);
+  const stop = () => { clearInterval(flashInt); document.title = orig; document.removeEventListener("visibilitychange", stop); };
+  setTimeout(() => document.addEventListener("visibilitychange", stop), 50);
+  setTimeout(stop, 30000);
+}
+let liveHook = null;
+function rerenderLive(changedId){ liveHook && liveHook(changedId); }
+
+function isClosed(a){ return !a || a.status !== "open" || (a.ends_at && new Date(a.ends_at) <= new Date()); }
+function countdownText(a){
+  if (!a) return "";
+  if (a.status !== "open") return "Bidding closed";
+  if (!a.ends_at) return "Bidding open";
+  const ms = new Date(a.ends_at) - new Date();
+  if (ms <= 0) return "Bidding closed";
+  const h = Math.floor(ms/3.6e6), m = Math.floor(ms%3.6e6/6e4), s = Math.floor(ms%6e4/1000);
+  return "Ends in " + (h ? h + "h " : "") + (h || m ? m + "m " : "") + (h ? "" : s + "s");
+}
+function startClock(){
+  clearInterval(S.timer);
+  S.timer = setInterval(() => {
+    document.querySelectorAll("[data-countdown]").forEach(el => el.textContent = countdownText(S.auction));
+    if (S.auction && S.auction.ends_at && !S._endedShown && new Date(S.auction.ends_at) <= new Date()) { S._endedShown = true; rerenderLive(); }
+  }, 1000);
+}
+
+function headerHTML(title, sub, backTo){
+  return `<header class="top"><div class="wrap"><div class="row">
+    ${backTo != null ? `<button class="back" aria-label="Back" onclick="go('${backTo}')">‹</button>` : ""}
+    <h1>${esc(title)}</h1></div>${sub ? `<div class="sub">${sub}</div>` : ""}</div></header>`;
+}
+
+/* ---------- router ---------- */
+async function route(){
+  liveHook = null;
+  const p = params(); const aid = p.get("a"); const app = $("#app");
+  if (!aid) { teardown(); S.auctionId = null; return renderHome(); }
+  app.innerHTML = `<div class="spin"></div>`;
+  const ok = await loadAuction(aid);
+  if (!ok) { app.innerHTML = headerHTML("Auction not found", "", "") + `<main class="wrap"><div class="empty">This auction link doesn't look right. Check the QR code and try again.</div></main>`; return; }
+  startClock();
+  if (p.has("admin")) return renderAdmin(p.get("tab") || "items");
+  if (!me()) return renderRegister(p.get("i"));
+  if (p.get("i")) return renderItem(p.get("i"));
+  return renderLobby(p.get("f") || "all");
+}
+
+/* ---------- home (organizer) ---------- */
+async function renderHome(){
+  const app = $("#app");
+  app.innerHTML = headerHTML("Silent Auction", `<span>Organizer home</span>`) + `<main class="wrap stack"><div class="spin"></div></main>`;
+  const { data } = await sb.from("auctions").select("id,name,ends_at,status,created_at").order("created_at", { ascending:false });
+  const list = (data || []).map(a => `
+    <div class="item" onclick="go('a=${a.id}&admin')">
+      <div class="thumb">${initial(a.name)}</div>
+      <div class="meta"><div class="t">${esc(a.name)}</div>
+      <div class="small muted">${a.ends_at ? "Ends " + new Date(a.ends_at).toLocaleString([], {dateStyle:"medium", timeStyle:"short"}) : "No end time set"}</div></div>
+      <span class="pill ${a.status === "open" ? "win" : "none"}">${a.status === "open" ? "Open" : "Closed"}</span>
+    </div>`).join("");
+  $("main").innerHTML = `
+    <div class="card stack">
+      <h2 style="font-size:20px">Create a new auction</h2>
+      <div><label class="f">Auction name</label><input class="in" id="na" placeholder="Spring Gala 2026"></div>
+      <div><label class="f">Bidding ends (optional)</label><input class="in" id="ne" type="datetime-local"></div>
+      <div><label class="f">Admin PIN (you'll need this to manage the auction)</label><input class="in" id="np" type="password" inputmode="numeric" placeholder="At least 4 digits"></div>
+      <button class="btn primary block" id="cb">Create auction</button>
+    </div>
+    <h2 style="font-size:18px;margin-top:26px">Your auctions</h2>
+    <div>${list || `<div class="empty">No auctions yet.</div>`}</div>`;
+  $("#cb").onclick = async () => {
+    const name = $("#na").value, pin = $("#np").value, ends = $("#ne").value;
+    $("#cb").disabled = true;
+    const { data:id, error } = await sb.rpc("create_auction", { p_name:name, p_pin:pin, p_ends_at: ends ? new Date(ends).toISOString() : null });
+    $("#cb").disabled = false;
+    if (error) return toast("out", "Couldn't create auction", errMsg(error));
+    store.sset("sa_pin_" + id, pin);
+    go(`a=${id}&admin`);
+  };
+}
+
+/* ---------- bidder: register ---------- */
+function renderRegister(itemId){
+  const a = S.auction;
+  $("#app").innerHTML = headerHTML(a.name, `<span class="pill light" data-countdown>${countdownText(a)}</span>`) + `
+  <main class="wrap stack">
+    <div class="card stack">
+      <h2 style="font-size:22px">Welcome! Let's get you bidding.</h2>
+      <p class="muted" style="margin:0">Enter your name and phone once. This phone will remember you for the rest of the event.</p>
+      <div><label class="f">Your name</label><input class="in" id="rn" autocomplete="name" placeholder="First and last name"></div>
+      <div><label class="f">Mobile number</label><input class="in" id="rp" type="tel" autocomplete="tel" placeholder="(801) 555-1234"></div>
+      <button class="btn gold block" id="rb">Start bidding</button>
+      <p class="small muted" style="margin:0">Only the organizer sees your phone number. Other bidders see your first name and last initial.</p>
+    </div>
+  </main>`;
+  $("#rb").onclick = async () => {
+    $("#rb").disabled = true;
+    const { data, error } = await sb.rpc("register_bidder", { p_auction: S.auctionId, p_name: $("#rn").value, p_phone: $("#rp").value });
+    $("#rb").disabled = false;
+    if (error) return toast("out", "Almost there", errMsg(error));
+    store.set(bidderKey(S.auctionId), data[0]);
+    askNotify();
+    toast("ok", "You're in, " + data[0].label.split(" ")[0] + "!", "Happy bidding.");
+    route();
+  };
+}
+function askNotify(){
+  try{ if ("Notification" in window && Notification.permission === "default") Notification.requestPermission(); }catch(e){}
+}
+
+/* ---------- bidder: lobby ---------- */
+function renderLobby(filter){
+  const a = S.auction, m = me();
+  const draw = () => {
+    const mine = S.items.filter(it => S.myMax[it.id] != null);
+    const outCount = mine.filter(it => myStatus(it) === "out").length;
+    const list = (filter === "mine" ? mine : S.items).map(it => {
+      const st = myStatus(it);
+      return `<a class="item" href="?a=${S.auctionId}&i=${it.id}" onclick="event.preventDefault();go('a=${S.auctionId}&i=${it.id}')">
+        <div class="thumb" ${thumbStyle(it)}>${it.image_url ? "" : initial(it.title)}</div>
+        <div class="meta"><div class="n">#${it.item_number}</div><div class="t">${esc(it.title)}</div>
+          <div class="small muted">${it.bid_count ? it.bid_count + (it.bid_count === 1 ? " bid" : " bids") : "No bids yet"}</div></div>
+        <div style="text-align:right">
+          <div class="price">${money(it.current_bid ?? it.starting_bid)}</div>
+          ${st === "win" ? `<span class="pill win">Winning</span>` : st === "out" ? `<span class="pill out">Outbid</span>` : `<span class="small muted">${it.current_bid == null ? "Starting" : "High bid"}</span>`}
+        </div></a>`;
+    }).join("");
+    $("main").innerHTML = `
+      ${isClosed(a) ? `<div class="closed-banner" style="margin-bottom:14px">Bidding is closed. Thanks for participating!</div>` : ""}
+      <div class="tabs">
+        <button class="tab ${filter === "all" ? "on" : ""}" onclick="go('a=${S.auctionId}')">All items (${S.items.length})</button>
+        <button class="tab ${filter === "mine" ? "on" : ""}" onclick="go('a=${S.auctionId}&f=mine')">My bids (${mine.length})${outCount ? ` · <span style="color:${filter==="mine"?"#ffb4ad":"var(--red)"}">${outCount} outbid</span>` : ""}</button>
+      </div>
+      <div>${list || `<div class="empty">${filter === "mine" ? "You haven't bid on anything yet." : "Items are on their way. Check back soon."}</div>`}</div>
+      <p class="small muted" style="text-align:center;margin-top:24px">Bidding as <b>${esc(m.label)}</b> · <a href="#" onclick="event.preventDefault();signOut()">Not you?</a></p>`;
+  };
+  $("#app").innerHTML = headerHTML(a.name, `<span class="pill gold" data-countdown>${countdownText(a)}</span>`) + `<main class="wrap"></main>`;
+  draw();
+  liveHook = draw;
+}
+function signOut(){ try{ localStorage.removeItem(bidderKey(S.auctionId)); }catch(e){} S.myMax = {}; route(); }
+
+/* ---------- bidder: item ---------- */
+async function renderItem(itemId){
+  const a = S.auction;
+  let it = S.items.find(i => i.id === itemId);
+  if (!it) { $("#app").innerHTML = headerHTML("Item not found", "", `a=${S.auctionId}`) + `<main class="wrap"><div class="empty">This item may have been removed.</div></main>`; return; }
+  let chosen = null;
+  $("#app").innerHTML = headerHTML(`#${it.item_number} ${it.title}`, `<span class="pill gold" data-countdown>${countdownText(a)}</span>`, `a=${S.auctionId}`) + `<main class="wrap stack" id="im"></main>`;
+
+  const draw = async (changedId) => {
+    if (changedId && changedId !== itemId) return;
+    it = S.items.find(i => i.id === itemId); if (!it) return;
+    const st = myStatus(it), closed = isClosed(S.auction), min = minNext(it);
+    if (chosen != null && chosen < min) chosen = null;
+    const steps = [min, min + Number(it.min_increment), min + Number(it.min_increment) * 3];
+    $("#im").innerHTML = `
+      <div class="hero" ${thumbStyle(it)}>${it.image_url ? "" : initial(it.title)}</div>
+      <div class="card stack">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px">
+          <div><div class="small muted">${it.current_bid == null ? "Starting bid" : "Current high bid"}</div>
+          <div class="bigprice">${money(it.current_bid ?? it.starting_bid)}</div></div>
+          <div class="small muted" style="text-align:right">${it.bid_count} ${it.bid_count === 1 ? "bid" : "bids"}${it.high_bidder_label ? `<br>by ${esc(it.high_bidder_label)}` : ""}</div>
+        </div>
+        ${st === "win" ? `<div class="status-box win">You're the high bidder! 🎉</div>` : ""}
+        ${st === "out" ? `<div class="status-box out">You've been outbid. Your last bid was ${money(S.myMax[it.id])}.</div>` : ""}
+        ${it.description ? `<p style="margin:0;white-space:pre-wrap">${esc(it.description)}</p>` : ""}
+      </div>
+      ${closed ? `<div class="closed-banner">Bidding is closed</div>` : st === "win" ? "" : `
+      <div class="card stack">
+        <div style="display:flex;justify-content:space-between"><h3 style="font-size:18px">Place a bid</h3><span class="small muted">Minimum ${money(min)}</span></div>
+        <div class="quick">${steps.map(v => `<button data-v="${v}" class="${chosen === v ? "sel" : ""}">${money(v)}</button>`).join("")}</div>
+        <div><label class="f">Or enter your own amount</label><input class="in" id="amt" type="number" inputmode="decimal" min="${min}" step="1" placeholder="${min}" value="${chosen != null && !steps.includes(chosen) ? chosen : ""}"></div>
+        <button class="btn gold block" id="bb" style="font-size:17px">${chosen != null ? `Bid ${money(chosen)}` : `Bid ${money(min)}`}</button>
+      </div>`}
+      <div class="card"><h3 style="font-size:16px;margin-bottom:6px">Bid history</h3><ul class="hist" id="hist"><li class="muted">Loading…</li></ul></div>`;
+    document.querySelectorAll(".quick button").forEach(b => b.onclick = () => { chosen = Number(b.dataset.v); draw(); });
+    const amt = $("#amt");
+    if (amt) amt.oninput = () => { const v = Number(amt.value); chosen = amt.value ? v : null; $("#bb").textContent = `Bid ${money(chosen ?? min)}`; document.querySelectorAll(".quick button").forEach(b => b.classList.toggle("sel", Number(b.dataset.v) === chosen)); };
+    const bb = $("#bb");
+    if (bb) bb.onclick = () => placeBid(it, chosen ?? min);
+    const { data:h } = await sb.rpc("item_history", { p_item: itemId });
+    const hist = $("#hist");
+    if (hist) hist.innerHTML = (h && h.length) ? h.map(r => `<li><span>${esc(r.label)}</span><span><b>${money(r.amount)}</b> <span class="muted small">${new Date(r.created_at).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"})}</span></span></li>`).join("") : `<li class="muted">No bids yet. Be the first!</li>`;
+  };
+  await draw();
+  liveHook = draw;
+}
+async function placeBid(it, amount){
+  const m = me(); const bb = $("#bb");
+  if (!confirm(`Place a bid of ${money(amount)} on "${it.title}"?`)) return;
+  bb.disabled = true; bb.textContent = "Placing bid…";
+  const { error } = await sb.rpc("place_bid", { p_item: it.id, p_bidder: m.bidder_id, p_secret: m.secret, p_amount: amount });
+  if (error) { bb.disabled = false; bb.textContent = `Bid ${money(amount)}`; return toast("out", "Bid not placed", errMsg(error)); }
+  S.myMax[it.id] = Math.max(S.myMax[it.id] || 0, amount);
+  const idx = S.items.findIndex(i => i.id === it.id);
+  if (idx >= 0 && (S.items[idx].current_bid == null || Number(S.items[idx].current_bid) < amount)) {
+    S.items[idx] = { ...S.items[idx], current_bid: amount, high_bidder_id: m.bidder_id, high_bidder_label: m.label, bid_count: S.items[idx].bid_count + 1 };
+  }
+  toast("ok", "You're the high bidder!", `${money(amount)} on ${it.title}. We'll alert you here if someone outbids you.`);
+  askNotify();
+  rerenderLive(it.id);
+}
+
+/* ---------- admin ---------- */
+function adminPin(){ return store.sget("sa_pin_" + S.auctionId); }
+async function renderAdmin(tab){
+  const a = S.auction;
+  if (!adminPin()) {
+    $("#app").innerHTML = headerHTML(a.name, `<span>Organizer access</span>`, "") + `
+      <main class="wrap"><div class="card stack">
+        <h2 style="font-size:20px">Enter admin PIN</h2>
+        <input class="in" id="pin" type="password" inputmode="numeric" placeholder="PIN">
+        <button class="btn primary block" id="pb">Unlock</button>
+      </div></main>`;
+    $("#pb").onclick = async () => {
+      const pin = $("#pin").value;
+      const { error } = await sb.rpc("admin_check", { p_auction: S.auctionId, p_pin: pin });
+      if (error) return toast("out", "Wrong PIN", "Try again.");
+      store.sset("sa_pin_" + S.auctionId, pin); renderAdmin(tab);
+    };
+    return;
+  }
+  const tabs = [["items","Items"],["qr","QR codes"],["results","Results"],["settings","Settings"]];
+  $("#app").innerHTML = headerHTML(a.name, `<span class="pill gold" data-countdown>${countdownText(a)}</span><span>Organizer view</span>`, "") + `
+    <main class="wrap">
+      <div class="tabs noprint">${tabs.map(([k,l]) => `<button class="tab ${tab === k ? "on" : ""}" onclick="go('a=${S.auctionId}&admin&tab=${k}')">${l}</button>`).join("")}</div>
+      <div id="ap"></div>
+    </main>`;
+  ({ items: adminItems, qr: adminQR, results: adminResults, settings: adminSettings })[tab]();
+}
+function adminItems(){
+  const draw = () => {
+    const bidLink = `${baseUrl()}?a=${S.auctionId}`;
+    $("#ap").innerHTML = `
+      <div class="card stack" style="margin-bottom:14px">
+        <div class="small muted">Bidder link for this auction</div>
+        <div style="display:flex;gap:8px"><input class="in" readonly value="${esc(bidLink)}" onclick="this.select()"><button class="btn ghost" onclick="navigator.clipboard&&navigator.clipboard.writeText('${bidLink}');toast('ok','Link copied')">Copy</button></div>
+      </div>
+      <button class="btn gold block" onclick="editItem(null)">+ Add item</button>
+      <div class="card" style="margin-top:14px">${S.items.length ? S.items.map(it => `
+        <div class="adm-item">
+          <div class="thumb" style="width:52px;height:52px;font-size:18px" ${thumbStyle(it)}>${it.image_url ? "" : initial(it.title)}</div>
+          <div style="flex:1;min-width:0"><div class="n small muted">#${it.item_number}</div><div style="font-weight:600">${esc(it.title)}</div>
+            <div class="small muted">Start ${money(it.starting_bid)} · +${money(it.min_increment)} · ${it.bid_count} bids</div></div>
+          <div style="text-align:right"><div class="price" style="font-size:17px">${it.current_bid == null ? "–" : money(it.current_bid)}</div>
+          <button class="btn ghost" style="min-height:34px;padding:6px 12px;margin-top:4px" onclick="editItem('${it.id}')">Edit</button></div>
+        </div>`).join("") : `<div class="empty">No items yet. Add your first one.</div>`}</div>`;
+  };
+  draw(); liveHook = draw;
+}
+function editItem(id){
+  const it = id ? S.items.find(i => i.id === id) : {};
+  const ov = document.createElement("div"); ov.className = "overlay";
+  ov.innerHTML = `<div class="sheetpanel stack">
+    <h2 style="font-size:20px">${id ? "Edit item #" + it.item_number : "Add an item"}</h2>
+    <div><label class="f">Title</label><input class="in" id="et" value="${esc(it.title)}" placeholder="Weekend cabin getaway"></div>
+    <div><label class="f">Description</label><textarea class="in" id="ed" rows="3" placeholder="What's included, donated by, value…">${esc(it.description)}</textarea></div>
+    <div><label class="f">Photo link (optional)</label><input class="in" id="ei" value="${esc(it.image_url)}" placeholder="https://…"></div>
+    <div class="grid2">
+      <div><label class="f">Starting bid ($)</label><input class="in" id="es" type="number" inputmode="decimal" value="${it.starting_bid ?? 25}"></div>
+      <div><label class="f">Minimum raise ($)</label><input class="in" id="em" type="number" inputmode="decimal" value="${it.min_increment ?? 5}"></div>
+    </div>
+    <div class="grid2"><button class="btn ghost" id="ec">Cancel</button><button class="btn primary" id="esv">Save</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  $("#ec", ov).onclick = () => ov.remove();
+  $("#esv", ov).onclick = async () => {
+    $("#esv", ov).disabled = true;
+    const { error } = await sb.rpc("save_item", { p_auction: S.auctionId, p_pin: adminPin(), p_item: id,
+      p_title: $("#et", ov).value, p_description: $("#ed", ov).value, p_image_url: $("#ei", ov).value,
+      p_starting_bid: Number($("#es", ov).value), p_min_increment: Number($("#em", ov).value) });
+    $("#esv", ov).disabled = false;
+    if (error) return toast("out", "Couldn't save", errMsg(error));
+    ov.remove(); toast("ok", "Item saved");
+  };
+}
+function adminQR(){
+  const draw = () => {
+    $("#ap").innerHTML = `
+      <div class="noprint stack" style="margin-bottom:14px">
+        <p class="muted small" style="margin:0">Print this page and place each card next to its item. Bidders scan with their phone camera. The first card links to the full item list.</p>
+        <button class="btn primary block" onclick="window.print()">Print QR codes</button>
+      </div>
+      <div class="sheet">
+        <div class="qrcard"><div class="small muted">SCAN TO BID</div><h3>${esc(S.auction.name)}</h3><div class="qr" data-url="${baseUrl()}?a=${S.auctionId}"></div><div class="small">All items</div></div>
+        ${S.items.map(it => `<div class="qrcard"><div class="small muted">ITEM #${it.item_number} · SCAN TO BID</div><h3>${esc(it.title)}</h3>
+          <div class="qr" data-url="${baseUrl()}?a=${S.auctionId}&i=${it.id}"></div><div class="small">Starting bid ${money(it.starting_bid)}</div></div>`).join("")}
+      </div>`;
+    document.querySelectorAll(".qr").forEach(el => new QRCode(el, { text: el.dataset.url, width: 300, height: 300, correctLevel: QRCode.CorrectLevel.M }));
+  };
+  draw();
+}
+async function adminResults(){
+  const draw = async () => {
+    const { data, error } = await sb.rpc("auction_results", { p_auction: S.auctionId, p_pin: adminPin() });
+    if (error) { $("#ap").innerHTML = `<div class="empty">${esc(errMsg(error))}</div>`; return; }
+    const total = data.reduce((s, r) => s + Number(r.winning_bid || 0), 0);
+    $("#ap").innerHTML = `
+      <div class="grid2" style="margin-bottom:14px">
+        <div class="card"><div class="small muted">Total raised</div><div class="bigprice" style="font-size:30px">${money(total)}</div></div>
+        <div class="card"><div class="small muted">Items with bids</div><div class="bigprice" style="font-size:30px">${data.filter(r => r.winning_bid != null).length} / ${data.length}</div></div>
+      </div>
+      <div class="card" style="overflow-x:auto"><table class="res">
+        <tr><th>#</th><th>Item</th><th>Winner</th><th>Bid</th></tr>
+        ${data.map(r => `<tr><td>${r.item_number}</td><td>${esc(r.title)}</td>
+          <td>${r.winner_name ? `${esc(r.winner_name)}<br><a class="small muted" href="tel:${esc(r.winner_phone)}">${esc(r.winner_phone)}</a>` : `<span class="muted">No bids</span>`}</td>
+          <td><b>${r.winning_bid == null ? "–" : money(r.winning_bid)}</b></td></tr>`).join("")}
+      </table></div>
+      <button class="btn ghost block noprint" style="margin-top:14px" id="csv">Download as spreadsheet (CSV)</button>`;
+    $("#csv").onclick = () => {
+      const rows = [["Item #","Item","Winner","Phone","Winning bid","Bids"], ...data.map(r => [r.item_number, r.title, r.winner_name || "", r.winner_phone || "", r.winning_bid ?? "", r.bid_count])];
+      const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv"}));
+      a.download = (S.auction.name || "auction") + " results.csv"; a.click();
+    };
+  };
+  await draw(); liveHook = () => draw();
+}
+function adminSettings(){
+  const a = S.auction;
+  const local = a.ends_at ? new Date(new Date(a.ends_at).getTime() - new Date().getTimezoneOffset()*6e4).toISOString().slice(0,16) : "";
+  $("#ap").innerHTML = `<div class="card stack">
+    <div><label class="f">Auction name</label><input class="in" id="sn" value="${esc(a.name)}"></div>
+    <div><label class="f">Bidding ends</label><input class="in" id="se" type="datetime-local" value="${local}"></div>
+    <button class="btn primary block" id="ss">Save changes</button>
+    <hr style="border:0;border-top:1px solid var(--line);width:100%">
+    ${a.status === "open"
+      ? `<button class="btn danger block" id="st">Close bidding now</button>`
+      : `<button class="btn gold block" id="st">Reopen bidding</button>`}
+    <a class="btn ghost block" href="?a=${S.auctionId}" target="_blank">Open bidder view</a>
+  </div>`;
+  const save = async (status) => {
+    const ends = $("#se").value;
+    const { error } = await sb.rpc("update_auction", { p_auction: S.auctionId, p_pin: adminPin(), p_name: $("#sn").value,
+      p_ends_at: ends ? new Date(ends).toISOString() : null, p_status: status, p_description: a.description });
+    if (error) return toast("out", "Couldn't save", errMsg(error));
+    const { data } = await sb.from("auctions").select("*").eq("id", S.auctionId).single();
+    S.auction = data; toast("ok", "Saved"); adminSettings();
+  };
+  $("#ss").onclick = () => save(a.status);
+  $("#st").onclick = () => {
+    if (a.status === "open" && !confirm("Close bidding now? No one will be able to bid after this.")) return;
+    save(a.status === "open" ? "closed" : "open");
+  };
+}
+
+route();
+</script>
+</body>
+</html>
